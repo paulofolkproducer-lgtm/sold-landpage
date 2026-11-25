@@ -1,6 +1,6 @@
-# SOLID — A cidade é de quem manda nela
+# SOLD — A cidade é de quem manda nela
 
-Landing page do jogo SOLID, publicada pelo GitHub Pages.
+Landing page do jogo SOLD, publicada pelo GitHub Pages.
 
 Um jogo de crime e sobrevivência numa cidade litorânea em blocos 3D. Você chega
 sem nada além do aluguel do hotel pra pagar, e a rua oferece um jeito rápido de

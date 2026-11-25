@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SOLID — A cidade é de quem manda nela</title>
-<meta name="description" content="SOLID é um jogo de crime e sobrevivência numa cidade litorânea. Pague o aluguel, suba na vida e descubra quem manda nela.">
+<title>SOLD — A cidade é de quem manda nela</title>
+<meta name="description" content="SOLD é um jogo de crime e sobrevivência numa cidade litorânea. Pague o aluguel, suba na vida e descubra quem manda nela.">
 <link rel="icon" href="img/logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -279,6 +279,36 @@ footer a:hover{color:var(--amarelo)}
 .revelar{opacity:0;transform:translateY(24px);transition:opacity .7s cubic-bezier(.22,1,.36,1),transform .7s cubic-bezier(.22,1,.36,1)}
 .revelar.visto{opacity:1;transform:none}
 
+/* ---------------------------------------------------------------- botao de som */
+.botao-som{
+  position:fixed;right:22px;bottom:22px;z-index:80;
+  width:52px;height:52px;border-radius:50%;
+  display:grid;place-items:center;
+  background:rgba(18,16,15,.82);
+  backdrop-filter:blur(12px) saturate(1.4);
+  border:2px solid rgba(246,241,231,.22);
+  color:var(--creme);cursor:pointer;
+  transition:transform .18s cubic-bezier(.22,1,.36,1),border-color .18s,background .18s;
+  box-shadow:0 4px 0 rgba(0,0,0,.5);
+}
+.botao-som:hover{transform:translateY(-3px);border-color:rgba(255,201,60,.6);background:rgba(18,16,15,.94)}
+.botao-som:active{transform:translateY(1px);box-shadow:0 2px 0 rgba(0,0,0,.5)}
+.som-icone{display:grid;place-items:center;line-height:0}
+/* tocando: as ondas aparecem, o X some */
+.botao-som .ondas{opacity:1;transition:opacity .2s}
+.botao-som .mudo{opacity:0;transition:opacity .2s}
+/* mudo: as ondas somem, o X aparece, e o botao fica apagado */
+.botao-som.mudo .ondas{opacity:0}
+.botao-som.mudo .mudo{opacity:1}
+.botao-som.mudo{color:rgba(246,241,231,.45);border-color:rgba(246,241,231,.12)}
+/* pulsa uma vez quando a musica comeca, para o usuario notar que ha som */
+.botao-som.tocando{animation:aviso .8s cubic-bezier(.22,1,.36,1)}
+@keyframes aviso{
+  0%{transform:scale(1)}
+  40%{transform:scale(1.18);border-color:var(--amarelo)}
+  100%{transform:scale(1)}
+}
+
 /* ---------------------------------------------------------------- responsivo */
 @media (max-width:900px){
   .historia-inner{grid-template-columns:1fr;gap:40px}
@@ -295,7 +325,7 @@ footer a:hover{color:var(--amarelo)}
 
 <!-- ============================================================ FAIXA -->
 <div class="faixa" id="faixa">
-  <img src="img/logo.png" alt="SOLID">
+  <img src="img/logo.png" alt="SOLD">
   <nav>
     <a href="#trailer">Trailer</a>
     <a href="#galeria">Cenas</a>
@@ -307,7 +337,7 @@ footer a:hover{color:var(--amarelo)}
 
 <!-- ============================================================ CAPA -->
 <header class="capa">
-  <img src="img/logo.png" alt="SOLID — A cidade é de quem manda nela" class="capa-logo">
+  <img src="img/logo.png" alt="SOLD — A cidade é de quem manda nela" class="capa-logo">
   <p class="capa-sub">
     Você chegou na cidade sem nada além do aluguel do hotel pra pagar.
     A rua oferece um jeito rápido de resolver isso — e cobra caro depois.
@@ -532,12 +562,88 @@ footer a:hover{color:var(--amarelo)}
 
 <!-- ============================================================ RODAPE -->
 <footer>
-  <img src="img/logo.png" alt="SOLID">
+  <img src="img/logo.png" alt="SOLD">
   <span>© 2026 — Todos os direitos reservados</span>
   <a href="#">Fale com a gente</a>
 </footer>
 
+<!-- ============================================================ SOM -->
+<button class="botao-som" id="botao-som" aria-label="Ligar ou desligar a música" title="Música">
+  <span class="som-icone" aria-hidden="true">
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none"
+         stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M11 5 6 9H2v6h4l5 4V5z"/>
+      <g class="ondas">
+        <path d="M15.5 8.5a5 5 0 0 1 0 7"/>
+        <path d="M18.5 5.5a9 9 0 0 1 0 13"/>
+      </g>
+      <g class="mudo">
+        <path d="M16 9l5 6"/>
+        <path d="M21 9l-5 6"/>
+      </g>
+    </svg>
+  </span>
+</button>
+<audio id="musica" src="musica.mp3" loop preload="auto"></audio>
+
 <script>
+// ---------------------------------------------------------------- musica
+// Os navegadores bloqueiam audio automatico: o som so pode comecar depois de
+// uma interacao do usuario. Entao a musica entra no PRIMEIRO clique ou toque em
+// qualquer lugar, uma vez so. O botao do canto liga e desliga, e a escolha fica
+// guardada para as proximas visitas.
+const musica = document.getElementById('musica');
+const botaoSom = document.getElementById('botao-som');
+const CHAVE = 'sold-musica-muda';
+
+if (musica) {
+  musica.volume = 0.35;
+
+  const querSilencio = localStorage.getItem(CHAVE) === '1';
+  if (querSilencio) {
+    botaoSom.classList.add('mudo');
+  }
+
+  // liga a musica (ou nao, se o usuario ja tinha desligado)
+  let jaTocou = false;
+  function tocar() {
+    if (jaTocou) return;
+    if (localStorage.getItem(CHAVE) === '1') return;
+    jaTocou = true;
+    musica.play().then(() => {
+      botaoSom.classList.add('tocando');
+      setTimeout(() => botaoSom.classList.remove('tocando'), 900);
+    }).catch(() => { jaTocou = false; /* o navegador recusou: tenta no proximo gesto */ });
+  }
+
+  // o primeiro gesto em qualquer lugar da pagina comeca a musica (uma vez so)
+  window.addEventListener('pointerdown', tocar, { once: true });
+  window.addEventListener('keydown', tocar, { once: true });
+
+  // O botao: o pointerdown dele nao sobe para o window, senao clicar no botao
+  // como primeiro gesto tocaria e pausaria na mesma hora.
+  botaoSom.addEventListener('pointerdown', (ev) => ev.stopPropagation());
+  botaoSom.addEventListener('click', (ev) => {
+    ev.stopPropagation();
+    // ainda nao tocou: o primeiro clique no botao LIGA a musica
+    if (!jaTocou) {
+      localStorage.setItem(CHAVE, '0');
+      botaoSom.classList.remove('mudo');
+      tocar();
+      return;
+    }
+    // ja tocou: alterna
+    const muda = !botaoSom.classList.contains('mudo');
+    botaoSom.classList.toggle('mudo', muda);
+    localStorage.setItem(CHAVE, muda ? '1' : '0');
+    if (muda) {
+      musica.pause();
+    } else {
+      musica.play().catch(() => {});
+    }
+  });
+}
+
 // A faixa aparece depois que a capa sai de quadro
 const faixa = document.getElementById('faixa');
 const capa = document.querySelector('.capa');
